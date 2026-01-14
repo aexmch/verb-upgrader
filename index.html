@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Verb Upgrader 3.0 - 50題大神挑戰</title>
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX Compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        .medal-card {
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .medal-card:hover {
+            transform: translateY(-5px) scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- Inline SVG Icons ---
+        const IconBase = ({ children, size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
+
+        const Zap = (props) => (<IconBase {...props}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></IconBase>);
+        const Trophy = (props) => (<IconBase {...props}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></IconBase>);
+        const Flame = (props) => (<IconBase {...props}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></IconBase>);
+        const MedalIcon = (props) => (<IconBase {...props}><circle cx="12" cy="8" r="6"></circle><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path></IconBase>);
+        const Target = (props) => (<IconBase {...props}><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></IconBase>);
+        const BookOpen = (props) => (<IconBase {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></IconBase>);
+        const Star = (props) => (<IconBase {...props}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></IconBase>);
+        const ChevronRight = (props) => (<IconBase {...props}><polyline points="9 18 15 12 9 6"></polyline></IconBase>);
+        const RefreshCw = (props) => (<IconBase {...props}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M3 21v-5h5"></path></IconBase>);
+        const CheckCircle2 = (props) => (<IconBase {...props}><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></IconBase>);
+        const XCircle = (props) => (<IconBase {...props}><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></IconBase>);
+        const Info = (props) => (<IconBase {...props}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></IconBase>);
+        const MessageCircle = (props) => (<IconBase {...props}><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"></path></IconBase>);
+
+        const ALL_QUESTIONS = [
+            // 第一章：1-10
+            { id: 1, weak: "You should wait patiently for the results.", zh: "你應該耐心地等待結果。", hint: "表示『等待時機』的強力動詞...", options: ["Stay waiting", "Bide your time", "Keep to wait"], correct: 1, sentence: "You should bide your time for the results.", analysis: "Bide 隱含了耐心與目的性，比一般的 wait 更具深度。" },
+            { id: 2, weak: "The chef cut the onions small-ly.", zh: "廚師把洋蔥切得很碎。", hint: "切碎、切丁有專門的動詞...", options: ["Small cut", "Shorten", "Minced"], correct: 2, sentence: "The chef minced the onions.", analysis: "料理中，強力動詞 Mince 本身就代表切碎成末。" },
+            { id: 3, weak: "He walked slowly in the park.", zh: "他在公園裡漫步。", hint: "描述悠閒走動的專屬動詞...", options: ["Strolled", "Marched", "Ran slowly"], correct: 0, sentence: "He strolled through the park.", analysis: "Stroll 自帶悠閒心情與慢速感，不需副詞修飾。" },
+            { id: 4, weak: "Please look carefully at the contract.", zh: "請仔細審查這份合約。", hint: "專業審核、細看的動詞...", options: ["Watch it", "Scrutinize", "See better"], correct: 1, sentence: "Please scrutinize the contract.", analysis: "Scrutinize 是商務中『細察』的標準高級表達。" },
+            { id: 5, weak: "She ate the food very quickly.", zh: "她狼吞虎嚥地吃完了食物。", hint: "像狼一樣快速進食...", options: ["Gulping", "Eat fastly", "Wolfed down"], correct: 2, sentence: "She wolfed down the food.", analysis: "Wolf down 生動地結合了飢餓感與速度。" },
+            { id: 6, weak: "Students need to think deeply about this.", zh: "學生們需要對此進行深思。", hint: "反省、沉思的動詞...", options: ["Reflect on", "Brain big", "Deep thinking"], correct: 0, sentence: "Students need to reflect on this.", analysis: "Reflect 比 think deeply 更有哲學反思的層次。" },
+            { id: 7, weak: "He talked very loudly at the waiter.", zh: "他對服務生大聲吼叫。", hint: "巨大低沉的吼叫聲...", options: ["Speak big", "Sound high", "Bellowed"], correct: 2, sentence: "He bellowed at the waiter.", analysis: "Bellow 描述出那種憤怒或權威感極強的吼聲。" },
+            { id: 8, weak: "The police searched thoroughly for clues.", zh: "警方徹底搜查了線索。", hint: "地毯式、細緻的搜索...", options: ["Combed through", "Find hard", "Looking everywhere"], correct: 0, sentence: "The police combed through the area for clues.", analysis: "Comb through 代表極其細密且不放過任何死角的過程。" },
+            { id: 9, weak: "Don't run fast on the slippery floor.", zh: "別在濕滑的地板上快跑。", hint: "短距爆發、衝刺的警告...", options: ["Moving quickly", "Dash", "Speeding up"], correct: 1, sentence: "Don't dash across the slippery floor.", analysis: "Dash 具有極速衝刺與急迫感，適合作為警告。" },
+            { id: 10, weak: "I was sleeping soundly.", zh: "我正熟睡著。", hint: "沉靜且深度的睡眠...", options: ["Deep sleeply", "Slumbering", "Night quiet"], correct: 1, sentence: "I was slumbering.", analysis: "Slumber 取代了平庸的 sleep，更顯寧靜深沉。" },
+            
+            // 第二章：11-20
+            { id: 11, weak: "He took notes focusly during the lecture.", zh: "他在演講時專心記筆記。", hint: "最自然的心理專注表達...", options: ["Focused on taking", "Jotted down", "Note focus"], correct: 0, sentence: "He focused on taking notes during the lecture.", analysis: "將『專心』轉化為主動詞是英文最穩固的架構。" },
+            { id: 12, weak: "The surface became same after we put sand.", zh: "鋪沙後表面變平整了。", hint: "趨於平衡或平坦的動詞...", options: ["Leveled up", "Same-ly became", "Evened out"], correct: 2, sentence: "The surface evened out after we put sand.", analysis: "Even out 是描述數據或物理表面趨於穩定的完美動詞。" },
+            { id: 13, weak: "They work very hard in the coal mine.", zh: "他們在煤礦裡辛苦勞動。", hint: "艱苦體力活的強力動詞...", options: ["Toiled", "Busy many", "Hard work"], correct: 0, sentence: "They toiled in the coal mine.", analysis: "Toil 描述出那種汗流浹背、極度疲累的動態。" },
+            { id: 14, weak: "The baby cried loudly.", zh: "寶寶大聲嚎哭。", hint: "嚎啕大哭的生動詞彙...", options: ["Big cry", "Bawled", "Shouted tears"], correct: 1, sentence: "The baby bawled.", analysis: "Bawl 專指大聲且連續的嚎哭，極富渲染力。" },
+            { id: 15, weak: "She laughed quietly at the joke.", zh: "她對著笑話輕聲竊笑。", hint: "內斂輕快的笑聲...", options: ["Guffawed", "Chuckled", "Small laugh"], correct: 1, sentence: "She chuckled at the joke.", analysis: "Chuckle 描繪了一種低聲、含蓄的愉悅感。" },
+            { id: 16, weak: "I wrote the address quickly on the paper.", zh: "我在紙上潦草地寫下地址。", hint: "快速且混亂地書寫...", options: ["Scribbled", "Fast write", "Drew words"], correct: 0, sentence: "I scribbled the address on the paper.", analysis: "Scribble 包含寫得快且字跡潦草雙重含義。" },
+            { id: 17, weak: "The stars shone brightly in the sky.", zh: "星星在天空中閃爍。", hint: "忽明忽暗的閃耀感...", options: ["Light big", "Brightly up", "Twinkled"], correct: 2, sentence: "The stars twinkled in the sky.", analysis: "Twinkle 賦予星光一種跳動、靈動的特質。" },
+            { id: 18, weak: "He asked for help very politely.", zh: "他非常誠懇地請求協助。", hint: "最具誠意與迫切的懇求...", options: ["Ask many", "Beseeched", "Begging hard"], correct: 1, sentence: "He beseeched them for help.", analysis: "Beseech 展現最高等級的誠意，單一動詞勝過副詞補強。" },
+            { id: 19, weak: "The dog smelled the floor carefully.", zh: "狗仔細地嗅聞地板。", hint: "鼻子嗅聞的特定動作...", options: ["Looking by nose", "Care smell", "Sniffed"], correct: 2, sentence: "The dog sniffed the floor.", analysis: "Sniff 準確描述了反覆吸氣嗅聞的物理動作。" },
+            { id: 20, weak: "The glass broke loudly.", zh: "玻璃破碎發出巨響。", hint: "碎成千萬片的粉碎動詞...", options: ["Big break", "Shattered", "Broken down"], correct: 1, sentence: "The glass shattered.", analysis: "Shatter 比 break 更有視覺張力與聲音震撼力。" },
+
+            // 第三章：21-30
+            { id: 21, weak: "She cleaned the kitchen thoroughly.", zh: "她徹底擦洗了廚房。", hint: "用力摩擦清洗的動詞...", options: ["Scrubbed", "Clean all", "Washed hard"], correct: 0, sentence: "She scrubbed the kitchen.", analysis: "Scrub 展現了清潔時的物理力度與頻率感。" },
+            { id: 22, weak: "The team worked together very well.", zh: "團隊合作得非常好。", hint: "像凝膠一樣融合的默契...", options: ["Work good-ly", "Many help", "Gelled"], correct: 2, sentence: "The team gelled perfectly.", analysis: "Gel 描述團隊開始產生化學反應，配合無間。" },
+            { id: 23, weak: "He drank the water very fast.", zh: "他很快地喝完了水。", hint: "大口痛快豪飲...", options: ["Fast swallow", "Guzzled", "Water running"], correct: 1, sentence: "He guzzled the water.", analysis: "Guzzle 描寫出大口喝水的吞嚥聲與滿足感。" },
+            { id: 24, weak: "The price became small-ly lower.", zh: "價格稍微下降了一些。", hint: "緩慢、細微地移動...", options: ["Down small", "Edged", "Small drop"], correct: 1, sentence: "The price edged lower.", analysis: "Edge 描寫那種一小步一小步挪動的靈活感。" },
+            { id: 25, weak: "She looked at him with great love.", zh: "她含情脈脈地看著他。", hint: "溺愛、深愛的凝視...", options: ["Doted on", "Love looking", "See love-ly"], correct: 0, sentence: "She doted on him.", analysis: "Dote 直接定義了充滿愛意的行為，比 look + love 強力。" },
+            { id: 26, weak: "The light was flashing weak-ly.", zh: "燈光微弱地閃爍著。", hint: "光線忽明忽暗的跳動...", options: ["Weak flash", "Light shaking", "Flickered"], correct: 2, sentence: "The light flickered.", analysis: "Flicker 是描述光、火不穩定的唯一強力動詞。" },
+            { id: 27, weak: "He said it in a very low voice.", zh: "他用很小的聲音說。", hint: "含糊不清地咕噥...", options: ["Speak bottom", "Mumbled", "Small talk"], correct: 1, sentence: "He mumbled it.", analysis: "Mumble 代表聲音極小且發音不清晰。" },
+            { id: 28, weak: "The boat was moving smoothly.", zh: "小船平穩前進。", hint: "像滑行一樣的移動方式...", options: ["Glided", "Water run", "Smooth move"], correct: 0, sentence: "The boat glided.", analysis: "Glide 展示出毫不費力的滑動美感。" },
+            { id: 29, weak: "She touched the cat very softly.", zh: "她溫柔地撫摸貓。", hint: "反覆撫摸的專屬動詞...", options: ["Soft push", "Hand small", "Stroked"], correct: 2, sentence: "She stroked the cat.", analysis: "Stroke 專用於撫摸寵物或愛人，語感溫馨。" },
+            { id: 30, weak: "The engine made a loud noise.", zh: "引擎發出巨響。", hint: "震撼的轟鳴動詞...", options: ["Big sound", "Roared", "Bad shout"], correct: 1, sentence: "The engine roared.", analysis: "Roar 傳達出引擎的高轉速與強大震動感。" },
+
+            // 第四章：31-40
+            { id: 31, weak: "He ran into the room suddenly.", zh: "他突然衝進房間。", hint: "爆發式闖入...", options: ["Fast come", "Burst into", "Enter fast"], correct: 1, sentence: "He burst into the room.", analysis: "Burst 同時代表了突發性與強大的推進力。" },
+            { id: 32, weak: "The snow became liquid quickly.", zh: "雪很快融化成水。", hint: "冰消散的物理動詞...", options: ["Melted", "Change water", "Liquid up"], correct: 0, sentence: "The snow melted.", analysis: "Melt 取代冗長的『變成液體』過程描述。" },
+            { id: 33, weak: "He walked with difficulty from pain.", zh: "他疼得一瘸一拐地走。", hint: "跛行的專用術語...", options: ["Bad walk", "Step hard", "Limped"], correct: 2, sentence: "He limped.", analysis: "Limp 一字精準呈現疼痛導致的步態。" },
+            { id: 34, weak: "Water was coming out from the pipe.", zh: "水從水管滲出。", hint: "慢速、少量的滲透...", options: ["Water out", "Seeped", "Run small"], correct: 1, sentence: "Water seeped from the pipe.", analysis: "Seep 描述了慢速且難以阻擋的滲出感。" },
+            { id: 35, weak: "She threw the ball very hard.", zh: "她用力扔球。", hint: "使勁猛投的動詞...", options: ["Hurled", "Hard push", "Throw big"], correct: 0, sentence: "She hurled the ball.", analysis: "Hurl 的力度感比 throw 大得多。" },
+            { id: 36, weak: "The metal became hot and red.", zh: "金屬發出熾熱紅光。", hint: "紅熱發光的強效詞...", options: ["Hotting", "Red change", "Glowed"], correct: 2, sentence: "The metal glowed.", analysis: "Glow 捕捉了高溫產生的柔和紅光畫面。" },
+            { id: 37, weak: "He made a fast sketch.", zh: "他很快畫了草圖。", hint: "初步快速的起草動作...", options: ["Drafted", "Draw fast", "Paint small"], correct: 0, sentence: "He drafted a sketch.", analysis: "Draft 包含快速、初步構思的專業意義。" },
+            { id: 38, weak: "She breathed air in fast.", zh: "她急促地喘氣。", hint: "張口大聲吸氣...", options: ["Fast breathe", "Big air", "Gasping"], correct: 2, sentence: "She was gasping.", analysis: "Gasp 描述因震驚或缺氧導致的吸氣動作。" },
+            { id: 39, weak: "The sun was going down.", zh: "夕陽逐漸落下。", hint: "逐漸沉沒的優雅動作...", options: ["Sun fall", "Down-ing", "Dipping"], correct: 2, sentence: "The sun was dipping.", analysis: "Dip 形容太陽緩緩隱入地平線，非常地道。" },
+            { id: 40, weak: "He cleaned shoes to make them shine.", zh: "他把鞋擦得發亮。", hint: "拋光磨亮的動詞...", options: ["Polish", "Clean bright", "Wash shine"], correct: 0, sentence: "He polished the shoes.", analysis: "Polish 是讓表面平滑發亮的專用強力動詞。" },
+
+            // 第五章：41-50
+            { id: 41, weak: "The secret was spread out.", zh: "秘密被洩漏了。", hint: "消息像水一樣漏出...", options: ["Leaked", "Out many", "Speak all"], correct: 0, sentence: "The secret leaked.", analysis: "Leak 完美比喻了秘密不經意的流傳。" },
+            { id: 42, weak: "She thought about life's meaning.", zh: "她沉思生命的意義。", hint: "若有所思的深度發呆...", options: ["Mused", "Think big", "Head work"], correct: 0, sentence: "She mused on the meaning of life.", analysis: "Muse 專指那種帶有詩意的深層沉思。" },
+            { id: 43, weak: "They climbed the hill with difficulty.", zh: "他們費勁地爬上山丘。", hint: "手腳並用的攀爬...", options: ["High climb", "Clambered", "Walk hard"], correct: 1, sentence: "They clambered up the hill.", analysis: "Clamber 描述出費力、甚至略顯狼狽的攀爬姿態。" },
+            { id: 44, weak: "He talked hard to get a lower price.", zh: "他為了低價討價還價。", hint: "爭執不下的議價...", options: ["Haggled", "Speak cheap", "Money talk"], correct: 0, sentence: "He haggled over the price.", analysis: "Haggle 專指在交易中反覆爭執議價。" },
+            { id: 45, weak: "She talked gently to help child eat.", zh: "她溫柔哄孩子吃飯。", hint: "用耐心哄騙誘導入餐...", options: ["Nice talk", "Push eat", "Coaxed"], correct: 2, sentence: "She coaxed the child into eating.", analysis: "Coax 指用溫和且具說服力的語氣引導他人。" },
+            { id: 46, weak: "The water made his thirst stop.", zh: "水解了他的渴。", hint: "消除乾渴的強效動詞...", options: ["Quenched", "Stop thirst", "Water good"], correct: 0, sentence: "The water quenched his thirst.", analysis: "Quench 是消滅火焰或口渴的唯一強力動詞。" },
+            { id: 47, weak: "He jumped into the pool quickly.", zh: "他猛地跳進池中。", hint: "猛力投入水中的動作...", options: ["Fast jump", "Plunged", "Enter big"], correct: 1, sentence: "He plunged into the pool.", analysis: "Plunge 描寫出有深度、有爆發力的跳入感。" },
+            { id: 48, weak: "The bird flew very high and fast.", zh: "鳥兒在高空翱翔。", hint: "豪邁升空盤旋...", options: ["Fly top", "Air move", "Soared"], correct: 2, sentence: "The bird soared.", analysis: "Soar 指在天空中自在且強勁地盤旋上升。" },
+            { id: 49, weak: "Business became healthy and big.", zh: "生意茁壯成長。", hint: "繁榮發展、欣欣向榮...", options: ["Grow good", "Thrived", "Money big"], correct: 1, sentence: "The business thrived.", analysis: "Thrive 形容生命或體系健康的蓬勃發展。" },
+            { id: 50, weak: "He looked at secrets carefully.", zh: "他窺探別人的秘密。", hint: "帶有冒犯性的好奇打探...", options: ["See deep", "Watch secret", "Pried"], correct: 2, sentence: "He pried into other people's secrets.", analysis: "Pry 描述那種不被允許、帶有惡意的打探動作。" }
+        ];
+
+        const CHAPTERS = [
+            { id: 1, name: "語感覺醒者", icon: "🔥", color: "#3b82f6", label: "Sense Awakener" },
+            { id: 2, name: "直譯粉碎機", icon: "⚒️", color: "#8b5cf6", label: "Literal Crusher" },
+            { id: 3, name: "詞彙狙擊手", icon: "🎯", color: "#ef4444", label: "Lexical Sniper" },
+            { id: 4, name: "遣詞煉金術師", icon: "⚗️", color: "#f59e0b", label: "Verb Alchemist" },
+            { id: 5, name: "終極語感大神", icon: "👑", color: "#ec4899", label: "Fluency Deity" }
+        ];
+
+        const App = () => {
+            const [currentStep, setCurrentStep] = useState(0);
+            const [score, setScore] = useState(0);
+            const [combo, setCombo] = useState(0);
+            const [maxCombo, setMaxCombo] = useState(0);
+            const [showFeedback, setShowFeedback] = useState(false);
+            const [selectedAnswer, setSelectedAnswer] = useState(null);
+            const [isFinished, setIsFinished] = useState(false);
+            const [showMilestone, setShowMilestone] = useState(false);
+            const [shake, setShake] = useState(false);
+            const [medals, setMedals] = useState([]);
+
+            const currentChapterIndex = Math.floor(currentStep / 10);
+            const currentQ = ALL_QUESTIONS[currentStep];
+
+            const handleAnswer = (index) => {
+                if (showFeedback) return;
+                setSelectedAnswer(index);
+                setShowFeedback(true);
+                if (currentQ.correct === index) {
+                    setScore(prev => prev + 10 + (combo * 2));
+                    setCombo(prev => prev + 1);
+                    if (combo + 1 > maxCombo) setMaxCombo(combo + 1);
+                } else {
+                    setCombo(0);
+                    setShake(true);
+                    setTimeout(() => setShake(false), 500);
+                }
+            };
+
+            const handleNext = () => {
+                const nextStep = currentStep + 1;
+                if (nextStep % 10 === 0) {
+                    // 解鎖勳章
+                    const newMedal = CHAPTERS[currentChapterIndex];
+                    if (!medals.find(m => m.id === newMedal.id)) {
+                        setMedals([...medals, newMedal]);
+                    }
+                    setShowMilestone(true);
+                } else {
+                    proceedToNext();
+                }
+            };
+
+            const proceedToNext = () => {
+                if (currentStep < 49) {
+                    setCurrentStep(prev => prev + 1);
+                    setSelectedAnswer(null);
+                    setShowFeedback(false);
+                    setShowMilestone(false);
+                } else {
+                    setIsFinished(true);
+                }
+            };
+
+            const reset = () => {
+                setCurrentStep(0);
+                setScore(0);
+                setCombo(0);
+                setMaxCombo(0);
+                setSelectedAnswer(null);
+                setShowFeedback(false);
+                setIsFinished(false);
+                setShowMilestone(false);
+                setMedals([]);
+            };
+
+            const progressOverall = ((currentStep + 1) / 50) * 100;
+            const rankTitle = (s) => {
+                if (s >= 700) return "詞彙造物主";
+                if (s >= 500) return "語法大師";
+                if (s >= 200) return "表達達人";
+                return "動詞新手";
+            };
+
+            return (
+                <div className={`min-h-screen p-4 md:p-8 transition-colors duration-1000 ${combo > 5 ? 'bg-indigo-50' : 'bg-slate-50'}`}>
+                    <div className="max-w-4xl mx-auto">
+                        
+                        <header className="mb-6 flex flex-col md:flex-row justify-between items-center gap-4 text-left">
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-indigo-600 rounded-2xl shadow-xl text-white rotate-3"><Zap fill="white" size={28} /></div>
+                                <div className="text-left">
+                                    <h1 className="text-2xl font-black text-slate-800 tracking-tight italic uppercase leading-none">Verb Upgrader 3.0</h1>
+                                    <p className="text-xs font-bold text-slate-400 mt-1 tracking-widest uppercase">50 Missions • Marathon</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-3">
+                                <div className="bg-white px-5 py-3 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3">
+                                    <Trophy className="text-amber-400" size={24} />
+                                    <div className="text-right">
+                                        <p className="text-[10px] uppercase font-bold text-slate-400">Total Score</p>
+                                        <p className="text-xl font-black text-indigo-600 leading-none">{score}</p>
+                                    </div>
+                                </div>
+                                <div className={`bg-white px-5 py-3 rounded-2xl shadow-sm border flex items-center gap-3 transition-all ${combo > 0 ? 'bg-orange-500 border-orange-400 text-white' : 'border-slate-200'}`}>
+                                    <Flame className={combo > 0 ? 'animate-bounce' : 'text-slate-300'} size={24} />
+                                    <div className="text-right">
+                                        <p className={`text-[10px] uppercase font-bold ${combo > 0 ? 'text-orange-100' : 'text-slate-400'}`}>Combo</p>
+                                        <p className="text-xl font-black leading-none">{combo}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </header>
+
+                        {/* Medal Progress Slots */}
+                        <div className="mb-8 grid grid-cols-5 gap-3">
+                            {CHAPTERS.map(ch => (
+                                <div key={ch.id} className={`flex flex-col items-center p-2 rounded-2xl border-2 transition-all ${medals.find(m => m.id === ch.id) ? 'bg-white border-indigo-200 opacity-100' : 'bg-slate-100 border-transparent opacity-30'}`}>
+                                    <div className="text-2xl mb-1">{ch.icon}</div>
+                                    <span className="text-[10px] font-black uppercase text-slate-500 text-center leading-tight">{ch.name}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {!isFinished && !showMilestone ? (
+                            <div className={`bg-white rounded-[40px] shadow-2xl border-4 overflow-hidden transition-all duration-300 ${shake ? 'shake border-red-200' : 'border-white'}`}>
+                                <div className="h-2 bg-slate-100 w-full"><div className="h-full bg-indigo-500 transition-all duration-700 ease-out" style={{ width: `${progressOverall}%` }} /></div>
+                                <div className="p-8 md:p-12">
+                                    <div className="flex justify-between items-center mb-8 text-left">
+                                        <div className="flex items-center gap-2 text-indigo-500"><Target size={20} /><span className="text-sm font-black text-slate-400 uppercase tracking-widest">MISSION {currentStep + 1} / 50</span></div>
+                                        <div className="text-sm font-bold px-3 py-1 rounded-full bg-slate-50 text-slate-500 border border-current uppercase">{rankTitle(score)}</div>
+                                    </div>
+                                    
+                                    <div className="relative mb-12 group text-left">
+                                        <div className="absolute -inset-2 bg-gradient-to-r from-red-100 to-orange-100 rounded-[30px] blur opacity-25"></div>
+                                        <div className="relative p-8 bg-white rounded-[30px] border-2 border-dashed border-slate-200">
+                                            <span className="absolute -top-3 left-8 bg-red-500 text-white text-[10px] px-3 py-1 rounded font-black tracking-widest uppercase">Weak直譯</span>
+                                            <p className="text-2xl md:text-3xl font-black text-slate-400 line-through italic decoration-red-400/40 mb-3 leading-tight tracking-tight">"{currentQ.weak}"</p>
+                                            <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest bg-white px-2 py-0.5 rounded shadow-sm border border-indigo-50">意指</span>
+                                                <p className="text-slate-600 font-medium text-sm">{currentQ.zh}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-6 text-left">
+                                        <div className="flex items-center gap-2 text-indigo-600"><BookOpen size={20} className="shrink-0" /><p className="font-bold text-lg">{currentQ.hint}</p></div>
+                                        <div className="grid gap-4">
+                                            {currentQ.options.map((option, idx) => (
+                                                <button key={idx} onClick={() => handleAnswer(idx)} disabled={showFeedback} className={`group relative text-left p-6 rounded-3xl border-4 transition-all duration-200 ${showFeedback ? (currentQ.correct === idx ? 'border-green-500 bg-green-50 scale-[1.02] z-10' : (selectedAnswer === idx ? 'border-red-500 bg-red-50' : 'border-slate-100 opacity-40')) : 'border-slate-200 hover:border-indigo-500 hover:shadow-xl bg-slate-50'}`}>
+                                                    <div className="flex items-center justify-between relative z-10">
+                                                        <div className="flex items-center gap-5">
+                                                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black ${showFeedback && currentQ.correct === idx ? 'bg-green-500 text-white' : 'bg-white shadow-sm text-slate-400'}`}>{String.fromCharCode(65 + idx)}</div>
+                                                            <span className={`font-black text-xl md:text-2xl tracking-tight ${showFeedback && currentQ.correct === idx ? 'text-green-700' : 'text-slate-700'}`}>{option}</span>
+                                                        </div>
+                                                        {showFeedback && currentQ.correct === idx && <CheckCircle2 className="text-green-500" size={32} />}
+                                                        {showFeedback && selectedAnswer === idx && currentQ.correct !== idx && <XCircle className="text-red-500" size={32} />}
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {showFeedback && (
+                                        <div className="mt-8 animate-in fade-in zoom-in duration-300 text-left space-y-4">
+                                            <div className={`p-6 rounded-2xl border-2 ${currentQ.correct === selectedAnswer ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                                                <div className="flex items-start gap-3">
+                                                    <MessageCircle className={currentQ.correct === selectedAnswer ? 'text-green-600' : 'text-red-600'} />
+                                                    <p className="font-medium text-slate-700">{currentQ.correct === selectedAnswer ? 'Nice Upgrading!' : '差一點點！來看看大神的表達方式。'}</p>
+                                                </div>
+                                            </div>
+                                            <div className="p-8 bg-slate-900 rounded-[35px] shadow-xl text-white relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 p-10 opacity-5"><Star size={120} fill="white" /></div>
+                                                <div className="relative z-10 space-y-4">
+                                                    <div className="flex items-center gap-2 text-indigo-400 font-black text-sm uppercase mb-4 tracking-widest"><Star size={18} className="fill-indigo-400" /> 正確解答與深度分析</div>
+                                                    <div>
+                                                        <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">Natural Sentence</p>
+                                                        <p className="text-2xl font-black text-indigo-300 italic tracking-wide">"{currentQ.sentence}"</p>
+                                                    </div>
+                                                    <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
+                                                        <div className="flex items-center gap-2 mb-2"><Info size={16} className="text-amber-400" /><p className="text-sm font-bold text-amber-400 uppercase">Analysis</p></div>
+                                                        <p className="text-sm text-slate-300 leading-relaxed font-medium">{currentQ.analysis}</p>
+                                                    </div>
+                                                    <div className="flex justify-end pt-4"><button onClick={handleNext} className="flex items-center justify-center gap-2 px-10 py-4 rounded-2xl font-black transition-all shadow-lg active:scale-95 text-white uppercase tracking-wider bg-indigo-600 hover:bg-indigo-700">{currentStep < 49 ? 'Next Mission' : 'Final Results'}<ChevronRight size={20} /></button></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ) : showMilestone ? (
+                            <div className="bg-white rounded-[40px] shadow-2xl p-10 md:p-16 text-center animate-in zoom-in border-4 border-amber-200 relative overflow-hidden">
+                                <div className="absolute -top-24 -left-24 w-64 h-64 bg-amber-50 rounded-full opacity-50"></div>
+                                <div className="relative z-10">
+                                    <div className="medal-float mb-8">
+                                        <div className="w-32 h-32 bg-amber-100 rounded-[40px] flex items-center justify-center mx-auto shadow-xl border-4 border-amber-400 rotate-12 relative">
+                                            <span className="text-6xl">{CHAPTERS[currentChapterIndex].icon}</span>
+                                        </div>
+                                    </div>
+                                    <h2 className="text-5xl font-black text-slate-800 mb-2 tracking-tight">解鎖勳章！</h2>
+                                    <p className="text-2xl font-black text-amber-600 uppercase tracking-widest mb-8">{CHAPTERS[currentChapterIndex].name}</p>
+                                    
+                                    <div className="bg-indigo-900 text-white p-8 rounded-[30px] mb-10 text-left">
+                                        <h3 className="text-lg font-black mb-4 border-b border-indigo-700 pb-2">章節數據 Chapters Stats</h3>
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div><p className="text-xs font-bold text-indigo-400 uppercase">目前總分</p><p className="text-3xl font-black">{score}</p></div>
+                                            <div><p className="text-xs font-bold text-indigo-400 uppercase">勳章進度</p><p className="text-3xl font-black">{medals.length} / 5</p></div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        <p className="text-xl font-bold text-slate-500 italic leading-relaxed">"做得太棒了！你的語感正以倍數成長中。<br/>下一個 10 題將挑戰更高等級的動詞，敢接受嗎？"</p>
+                                        <button onClick={proceedToNext} className="w-full md:w-auto bg-indigo-600 text-white px-12 py-5 rounded-3xl font-black text-2xl hover:bg-indigo-700 transition-all shadow-2xl shadow-indigo-200 hover:-translate-y-1 active:scale-95 uppercase tracking-tighter">
+                                            挑戰下個 10 題 <ChevronRight className="inline-block" size={32} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-white rounded-[40px] shadow-2xl p-10 md:p-16 text-center border-8 border-indigo-100 animate-in zoom-in">
+                                <div className="relative inline-block mb-10">
+                                    <div className="w-40 h-40 bg-indigo-100 rounded-[50px] flex items-center justify-center mx-auto rotate-12 shadow-2xl">
+                                        <Trophy size={80} className="text-indigo-600" />
+                                    </div>
+                                    <div className="absolute -bottom-4 -right-4 p-4 bg-red-500 rounded-3xl text-white shadow-xl animate-pulse font-black text-xl">GODLIKE</div>
+                                </div>
+                                <h2 className="text-6xl font-black text-slate-800 mb-2 leading-none">語感登神！</h2>
+                                <p className="text-slate-400 font-bold tracking-[0.3em] uppercase text-sm mb-12">All 50 Missions Accomplished</p>
+                                
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-12">
+                                    <div className="bg-slate-50 p-6 rounded-[30px] border-2 border-slate-100"><p className="text-xs font-bold text-slate-400 uppercase mb-1 tracking-widest">Final Score</p><p className="text-4xl font-black text-indigo-600">{score}</p></div>
+                                    <div className="bg-slate-50 p-6 rounded-[30px] border-2 border-slate-100"><p className="text-xs font-bold text-slate-400 uppercase mb-1 tracking-widest">Medals</p><p className="text-4xl font-black text-amber-500">5 / 5</p></div>
+                                    <div className="bg-slate-50 p-6 rounded-[30px] border-2 border-slate-100 col-span-2 md:col-span-1"><p className="text-xs font-bold text-slate-400 uppercase mb-1 tracking-widest">Title</p><p className="text-2xl font-black text-indigo-900">{rankTitle(score)}</p></div>
+                                </div>
+
+                                <div className="bg-slate-900 text-white p-10 rounded-[40px] mb-12 text-left relative overflow-hidden shadow-2xl">
+                                    <div className="absolute top-0 right-0 p-10 opacity-5 rotate-45"><Zap size={200} /></div>
+                                    <h3 className="text-2xl font-black mb-8 flex items-center gap-3"><Star size={24} className="text-amber-400 fill-amber-400" /> 終極英文升級指南</h3>
+                                    <ul className="space-y-6 relative z-10">
+                                        <li className="flex gap-4"><div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0 font-black text-sm">1</div><p className="text-lg"><b>強力動詞 > 副詞：</b>能用一個動詞表達的，絕對不要用副詞修飾（如 <b>Guzzled</b> 優於 drink fastly）。</p></li>
+                                        <li className="flex gap-4"><div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0 font-black text-sm">2</div><p className="text-lg"><b>態度轉移：</b>不要修飾『行為』，要改寫『動作本身』來展現態度（如 <b>Doted on</b> 優於 looked lovingly）。</p></li>
+                                        <li className="flex gap-4"><div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0 font-bold text-sm">3</div><p className="text-lg"><b>物理精確：</b>針對不同程度的動作選用最準確的詞（如 <b>Shattered</b> 代表粉碎，<b>Smashed</b> 代表猛力撞碎）。</p></li>
+                                    </ul>
+                                </div>
+
+                                <button onClick={reset} className="group flex items-center justify-center gap-4 w-full md:w-auto mx-auto bg-slate-900 text-white px-12 py-6 rounded-3xl font-black text-xl hover:bg-black transition-all shadow-2xl hover:-translate-y-1 active:scale-95 uppercase tracking-widest">
+                                    <RefreshCw size={28} className="group-hover:rotate-180 transition-transform duration-500" /> 再戰一次，挑戰完美
+                                </button>
+                            </div>
+                        )}
+                        
+                        <footer className="mt-12 text-center">
+                            <p className="text-slate-400 font-bold text-xs tracking-[0.4em] uppercase opacity-30 leading-loose">
+                                Powered by VerbUpgrader 3.0 Engine<br/>
+                                Specialized for Strong Verbs & Native Expressions
+                            </p>
+                        </footer>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
