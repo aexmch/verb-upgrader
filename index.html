@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Verb Upgrader 2.0 - 唯一解答強化版</title>
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX Compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- Inline SVG Icons ---
+        const IconBase = ({ children, size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
+
+        const Zap = (props) => (<IconBase {...props}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></IconBase>);
+        const Trophy = (props) => (<IconBase {...props}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></IconBase>);
+        const Flame = (props) => (<IconBase {...props}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></IconBase>);
+        const Target = (props) => (<IconBase {...props}><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></IconBase>);
+        const BookOpen = (props) => (<IconBase {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></IconBase>);
+        const CheckCircle2 = (props) => (<IconBase {...props}><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></IconBase>);
+        const XCircle = (props) => (<IconBase {...props}><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></IconBase>);
+        const MessageCircle = (props) => (<IconBase {...props}><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"></path></IconBase>);
+        const Star = (props) => (<IconBase {...props}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></IconBase>);
+        const ChevronRight = (props) => (<IconBase {...props}><polyline points="9 18 15 12 9 6"></polyline></IconBase>);
+        const RefreshCw = (props) => (<IconBase {...props}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M3 21v-5h5"></path></IconBase>);
+        const Info = (props) => (<IconBase {...props}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></IconBase>);
+
+        const App = () => {
+            const [currentStep, setCurrentStep] = useState(0);
+            const [score, setScore] = useState(0);
+            const [combo, setCombo] = useState(0);
+            const [maxCombo, setMaxCombo] = useState(0);
+            const [showFeedback, setShowFeedback] = useState(false);
+            const [selectedAnswer, setSelectedAnswer] = useState(null);
+            const [isFinished, setIsFinished] = useState(false);
+            const [shake, setShake] = useState(false);
+
+            const questions = [
+                {
+                    id: 1,
+                    chinglish: "You should wait patiently for the results.",
+                    chinese: "你應該耐心地等待結果。",
+                    hint: "表示『等待時機』的強力動詞...",
+                    options: [
+                        { 
+                            text: "Bide your time", natural: true, 
+                            explanation: "正確！這是最道地的用法，帶有『耐心等待直到正確時機』的含義。",
+                            fullSentence: "You should bide your time for the results.",
+                            analysis: "Bide 是一個強力動詞，它本身就隱含了耐心與目的。使用它能讓語氣顯得更有深度且道地。"
+                        },
+                        { text: "Stay waiting", natural: false, explanation: "這是中文『持續等待』的直譯，在英文中顯得冗長且不自然。" },
+                        { text: "Keep to wait", natural: false, explanation: "語法錯誤，且不符合母語人士的使用習慣。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 2,
+                    chinglish: "The chef cut the onions small-ly.",
+                    chinese: "廚師把洋蔥切得很碎。",
+                    hint: "切碎、切丁有專門的動詞...",
+                    options: [
+                        { 
+                            text: "Minced", natural: true, 
+                            explanation: "正確！料理中精確的動詞能省去多餘的副詞。",
+                            fullSentence: "The chef minced the onions.",
+                            analysis: "Mince 本身就代表『切到最碎、成末』，比起 cut small 更具專業感。"
+                        },
+                        { text: "Small cut", natural: false, explanation: "這是中文直譯，不符合料理專業用語。" },
+                        { text: "Shorten", natural: false, explanation: "這指的是縮短長度，並非指切碎食材。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 3,
+                    chinglish: "He walked slowly in the park.",
+                    chinese: "他在公園裡漫步。",
+                    hint: "描述悠閒走動的專屬動詞...",
+                    options: [
+                        { 
+                            text: "Strolled", natural: true, 
+                            explanation: "正確！Stroll 本身就是『悠閒地慢走』。",
+                            fullSentence: "He strolled through the park.",
+                            analysis: "Walk 是一個中性詞；但 Stroll 本身就自帶『悠閒的心情』，不需要額外加副詞修飾。"
+                        },
+                        { text: "Marched", natural: false, explanation: "這指行軍，力度太強且非常有節奏，不符合漫步情境。" },
+                        { text: "Ran slowly", natural: false, explanation: "語意矛盾，慢跑應用 jog。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 4,
+                    chinglish: "Please look carefully at the contract.",
+                    chinese: "請仔細審查這份合約。",
+                    hint: "『仔細檢查、細看』的專業動詞...",
+                    options: [
+                        { 
+                            text: "Scrutinize", natural: true, 
+                            explanation: "正確！這在商務或法律合約中非常道地。",
+                            fullSentence: "Please scrutinize the contract.",
+                            analysis: "Scrutinize 展現出一種『批判性且極致細心』的態度，比基礎的 look carefully 更專業。"
+                        },
+                        { text: "Watch it", natural: false, explanation: "這通常是警告別人小心某物，非審查合約。" },
+                        { text: "See better", natural: false, explanation: "這指視力上的改進，並非指態度上的仔細。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 5,
+                    chinglish: "She ate the food very quickly.",
+                    chinese: "她很快地吃完了食物。",
+                    hint: "狼吞虎嚥的專屬動詞...",
+                    options: [
+                        { 
+                            text: "Wolfed down", natural: true, 
+                            explanation: "正確！像狼一樣吃東西，非常生動。",
+                            fullSentence: "She wolfed down the food.",
+                            analysis: "Wolf down 不僅表達了速度，還生動地描繪了飢餓的神態，取代平庸的 very quickly。"
+                        },
+                        { text: "Gulping", natural: false, explanation: "通常指大口吞液體，較少用於固體食物。" },
+                        { text: "Eat fastly", natural: false, explanation: "語法錯誤，Fast 本身既是形容詞也是副詞。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 6,
+                    chinglish: "Students need to think deeply about this.",
+                    chinese: "學生們需要對此進行深思。",
+                    hint: "深思、反省、沉思...",
+                    options: [
+                        { 
+                            text: "Reflect on", natural: true, 
+                            explanation: "正確！這個詞自帶思考的深度。",
+                            fullSentence: "Students need to reflect on this.",
+                            analysis: "Think deeply 是初學者表達。Reflect 則能精準表達『反思』的哲學性行為。"
+                        },
+                        { text: "Brain big", natural: false, explanation: "完全錯誤的俚語用法。" },
+                        { text: "Deep thinking", natural: false, explanation: "這是名詞用法，不能直接取代動詞結構。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 7,
+                    chinglish: "He talked very loudly at the waiter.",
+                    chinese: "他對著服務生大聲吼叫。",
+                    hint: "大聲咆哮的強效動詞...",
+                    options: [
+                        { 
+                            text: "Bellowed", natural: true, 
+                            explanation: "正確！Bellow 能形容出低沉且巨大的吼聲。",
+                            fullSentence: "He bellowed at the waiter.",
+                            analysis: "Bellow 則能表達出憤怒或霸道的力度感，比單純的 talk loudly 更具張力。"
+                        },
+                        { text: "Speak big", natural: false, explanation: "中文『大聲說話』的誤譯。" },
+                        { text: "Sound high", natural: false, explanation: "這指音調高，而非音量大或吼叫。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 8,
+                    chinglish: "The police searched thoroughly for clues.",
+                    chinese: "警方徹底搜查了線索。",
+                    hint: "徹底、地毯式搜索的動詞...",
+                    options: [
+                        { 
+                            text: "Combed through", natural: true, 
+                            explanation: "正確！像用梳子梳頭髮一樣不放過任何角落。",
+                            fullSentence: "The police combed through the area for clues.",
+                            analysis: "Comb through 是非常有畫面感的片語，代表極其細密且徹底的搜尋過程。"
+                        },
+                        { text: "Looking everywhere", natural: false, explanation: "雖然意思正確，但不如強力動詞精準。" },
+                        { text: "Find hard", natural: false, explanation: "中文『辛苦找尋』的誤譯。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 9,
+                    chinglish: "Don't run fast on the slippery floor.",
+                    chinese: "別在濕滑的地板上快跑。",
+                    hint: "衝刺、飛奔的動詞...",
+                    options: [
+                        { 
+                            text: "Dash", natural: true, 
+                            explanation: "正確！這比 run fast 更有爆發力與急迫感。",
+                            fullSentence: "Don't dash across the slippery floor.",
+                            analysis: "Dash 和 Bolt 帶有極速衝刺的含義，在命令或警告時比 run fast 更有效。"
+                        },
+                        { text: "Moving quickly", natural: false, explanation: "太過平淡，缺乏警告感。" },
+                        { text: "Speeding up", natural: false, explanation: "這是指增加速度的過程，通常用於車輛。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 10,
+                    chinglish: "I was sleeping soundly.",
+                    chinese: "我正熟睡著。",
+                    hint: "深度睡眠的專屬動詞...",
+                    options: [
+                        { 
+                            text: "Slumbering", natural: true, 
+                            explanation: "正確！這是優雅且正式的動詞，包含『熟睡』之意。",
+                            fullSentence: "I was slumbering.",
+                            analysis: "Slumber 隱含了寧靜與熟睡的深度，取代了『普通動詞+副詞』的冗餘寫法。"
+                        },
+                        { text: "Deep sleeply", natural: false, explanation: "語法錯誤，副詞使用不當。" },
+                        { text: "Night quiet", natural: false, explanation: "完全不符合英文動詞結構。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 11,
+                    chinglish: "He took notes focusly during the lecture.",
+                    chinese: "他在演講時專心記筆記。",
+                    hint: "表達『專注狀態』的最佳結構...",
+                    options: [
+                        { 
+                            text: "Focused on taking", natural: true, 
+                            explanation: "正確！將『專心』轉化為主動詞是最自然的方式。",
+                            fullSentence: "He focused on taking notes during the lecture.",
+                            analysis: "英文中更好的做法是將『專心 (Focus)』變為主動詞，而非勉強發明一個副詞 focusly。"
+                        },
+                        { text: "Jotted down", natural: false, explanation: "雖然意思接近，但 Jot down 重點在於快速記下，非心理專注。" },
+                        { text: "Note focus", natural: false, explanation: "錯誤的名詞堆疊寫法。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 12,
+                    chinglish: "The surface became same after we put sand.",
+                    chinese: "在鋪上沙子後，表面變得平整了。",
+                    hint: "描述表面變得平整或平衡的動詞...",
+                    options: [
+                        { 
+                            text: "Evened out", natural: true, 
+                            explanation: "正確！Even out 表示某物變得平坦或平衡。",
+                            fullSentence: "The surface evened out after we put sand.",
+                            analysis: "片語動詞 even out 非常精準，常用於表面、分佈或局勢趨於穩定的情境。"
+                        },
+                        { text: "Same-ly became", natural: false, explanation: "語法完全錯誤。" },
+                        { text: "Leveled up", natural: false, explanation: "這通常指『等級提升』，而非物理表面平整。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 13,
+                    chinglish: "They work very hard in the coal mine.",
+                    chinese: "他們在煤礦裡辛苦勞動。",
+                    hint: "指體力上的艱苦勞作...",
+                    options: [
+                        { 
+                            text: "Toiled", natural: true, 
+                            explanation: "正確！Toil 專指艱苦繁重的體力勞動。",
+                            fullSentence: "They toiled in the coal mine.",
+                            analysis: "Toil 能具體化那種滿頭大汗、極其辛苦的勞作畫面，比 work hard 更有力。"
+                        },
+                        { text: "Busy many", natural: false, explanation: "中文『忙碌很多』的誤譯。" },
+                        { text: "Hard work", natural: false, explanation: "這是名詞用法，不能作為句子主動詞。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 14,
+                    chinglish: "The baby cried loudly.",
+                    chinese: "寶寶大聲嚎哭。",
+                    hint: "嚎啕大哭、咆哮般的哭聲...",
+                    options: [
+                        { 
+                            text: "Bawled", natural: true, 
+                            explanation: "正確！Bawl 形容放聲嚎哭，聲音極大。",
+                            fullSentence: "The baby bawled.",
+                            analysis: "Bawl 指那種像雷鳴一樣的大聲哭喊，在描寫嬰兒或悲傷時非常精準。"
+                        },
+                        { text: "Big cry", natural: false, explanation: "幼兒級別的直譯語法。" },
+                        { text: "Shouted tears", natural: false, explanation: "完全錯誤的組合。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 15,
+                    chinglish: "She laughed quietly at the joke.",
+                    chinese: "她對著那個笑話輕聲竊笑。",
+                    hint: "滿足地輕笑、竊笑的動詞...",
+                    options: [
+                        { 
+                            text: "Chuckled", natural: true, 
+                            explanation: "正確！形容低聲且滿足的愉悅輕笑。",
+                            fullSentence: "She chuckled at the joke.",
+                            analysis: "Chuckle 帶有一種內斂、私密的愉悅感。與其加副詞修飾，不如換一個精確動詞。"
+                        },
+                        { text: "Guffawed", natural: false, explanation: "這指大笑、狂笑，語意完全相反。" },
+                        { text: "Small laugh", natural: false, explanation: "中文『小聲笑』的誤譯。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 16,
+                    chinglish: "I wrote the address quickly on the paper.",
+                    chinese: "我在紙上潦草地寫下地址。",
+                    hint: "快速且不工整地書寫...",
+                    options: [
+                        { 
+                            text: "Scribbled", natural: true, 
+                            explanation: "正確！Scribble 完美解釋了『快且潦草』的動作品質。",
+                            fullSentence: "I scribbled the address on the paper.",
+                            analysis: "Scribble 是一個強力動詞，它能同時傳達動作、速度和書寫品質。"
+                        },
+                        { text: "Fast write", natural: false, explanation: "中文『快寫』的誤譯。" },
+                        { text: "Drew words", natural: false, explanation: "這指畫出文字，不符合日常書寫情境。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 17,
+                    chinglish: "The stars shone brightly in the sky.",
+                    chinese: "星星在天空中閃爍。",
+                    hint: "星星專用的閃爍動詞...",
+                    options: [
+                        { 
+                            text: "Twinkled", natural: true, 
+                            explanation: "正確！這是描寫星光最經典且道地的動詞。",
+                            fullSentence: "The stars twinkled in the sky.",
+                            analysis: "Shine brightly 太普通。Twinkle 則賦予了星星一種『忽明忽暗、閃耀』的特質。"
+                        },
+                        { text: "Light big", natural: false, explanation: "中文『光很大』的誤譯。" },
+                        { text: "Brightly up", natural: false, explanation: "語法錯誤。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 18,
+                    chinglish: "He asked for help very politely.",
+                    chinese: "他非常誠懇地請求協助。",
+                    hint: "誠懇且迫切的請求...",
+                    options: [
+                        { 
+                            text: "Beseeched", natural: true, 
+                            explanation: "正確！這是一個極具文學感與誠意的懇求動詞。",
+                            fullSentence: "He beseeched them for help.",
+                            analysis: "Beseech 本身就包含了極高的誠意與禮貌，不需要額外的副詞修飾。"
+                        },
+                        { text: "Ask many", natural: false, explanation: "中文『求很多次』的直譯，不道地。" },
+                        { text: "Begging hard", natural: false, explanation: "口語且力度不夠精確。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 19,
+                    chinglish: "The dog smelled the floor carefully.",
+                    chinese: "狗仔細地嗅聞地板。",
+                    hint: "狗用鼻子嗅聞的動作...",
+                    options: [
+                        { 
+                            text: "Sniffed", natural: true, 
+                            explanation: "正確！Sniff 就是特定指嗅聞的動作。",
+                            fullSentence: "The dog sniffed the floor.",
+                            analysis: "Sniff 本身就包含『仔細且反覆聞』的意思，取代了 smell carefully 的贅述。"
+                        },
+                        { text: "Looking by nose", natural: false, explanation: "中文『用鼻子看』的誤譯。" },
+                        { text: "Care smell", natural: false, explanation: "語法完全錯誤。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 20,
+                    chinglish: "The glass broke loudly.",
+                    chinese: "玻璃破碎發出巨響。",
+                    hint: "脆性物體碎成千萬片的動詞...",
+                    options: [
+                        { 
+                            text: "Shattered", natural: true, 
+                            explanation: "正確！Shatter 專指脆性物體粉碎。",
+                            fullSentence: "The glass shattered.",
+                            analysis: "Shatter 比 break loudly 更具震撼力，涵蓋了聲音與碎裂的畫面感。"
+                        },
+                        { text: "Big break", natural: false, explanation: "中式英文直譯。" },
+                        { text: "Broken down", natural: false, explanation: "這通常指機械故障或情緒崩潰。" }
+                    ],
+                    correctIndex: [0]
+                },
+                {
+                    id: 21,
+                    chinglish: "She cleaned the kitchen thoroughly.",
+                    chinese: "她徹底擦洗了廚房。",
+                    hint: "用力且徹底擦洗的動詞...",
+                    options: [
+                        { 
+                            text: "Scrubbed", natural: true, 
+                            explanation: "正確！描述了用刷子用力摩擦清洗。",
+                            fullSentence: "She scrubbed the kitchen.",
+                            analysis: "Scrub 能讓讀者直接感受到清潔時的力度與動作，取代平淡的 clean thoroughly。"
+                        },
+                        { text: "Clean all", natural: false, explanation: "過於簡單且不夠道地的表達。" },
+                        { text: "Washed hard", natural: false, explanation: "語意模糊且不專業。" }
+                    ],
+                    correctIndex: [0]
+                }
+            ];
+
+            const handleAnswer = (index) => {
+                if (showFeedback) return;
+                setSelectedAnswer(index);
+                setShowFeedback(true);
+                if (questions[currentStep].correctIndex.includes(index)) {
+                    setScore(prev => prev + 10 + (combo * 2));
+                    setCombo(prev => prev + 1);
+                    if (combo + 1 > maxCombo) setMaxCombo(combo + 1);
+                } else {
+                    setCombo(0);
+                    setShake(true);
+                    setTimeout(() => setShake(false), 500);
+                }
+            };
+
+            const nextQuestion = () => {
+                if (currentStep < questions.length - 1) {
+                    setCurrentStep(currentStep + 1);
+                    setSelectedAnswer(null);
+                    setShowFeedback(false);
+                } else {
+                    setIsFinished(true);
+                }
+            };
+
+            const resetGame = () => {
+                setCurrentStep(0);
+                setScore(0);
+                setCombo(0);
+                setMaxCombo(0);
+                setSelectedAnswer(null);
+                setShowFeedback(false);
+                setIsFinished(false);
+            };
+
+            const progress = ((currentStep + 1) / questions.length) * 100;
+            const getRank = (s) => {
+                if (s >= 250) return { title: "詞彙戰神 (Verb God)", color: "text-red-600" };
+                if (s >= 180) return { title: "語法大師 (Syntax Master)", color: "text-purple-600" };
+                if (s >= 100) return { title: "表達達人 (Fluent Speaker)", color: "text-blue-600" };
+                return { title: "動詞新手 (Verb Rookie)", color: "text-slate-600" };
+            };
+
+            const getFeedbackData = () => {
+                const q = questions[currentStep];
+                const sel = q.options[selectedAnswer];
+                if (q.correctIndex.includes(selectedAnswer)) {
+                    return {
+                        sentence: sel.fullSentence,
+                        analysis: sel.analysis,
+                        chinese: q.chinese
+                    };
+                } else {
+                    const firstCorrect = q.options[q.correctIndex[0]];
+                    return {
+                        sentence: firstCorrect.fullSentence,
+                        analysis: firstCorrect.analysis,
+                        chinese: q.chinese
+                    };
+                }
+            };
+
+            const feedbackData = selectedAnswer !== null ? getFeedbackData() : null;
+
+            return (
+                <div className={`min-h-screen transition-colors duration-500 bg-slate-50 p-4 md:p-8 text-slate-900 ${combo > 3 ? 'bg-orange-50' : ''}`}>
+                    <div className="max-w-3xl mx-auto">
+                        <header className="mb-6 flex flex-col md:flex-row justify-between items-center gap-4 text-left">
+                            <div className="flex items-center gap-2">
+                                <div className="p-2 bg-indigo-600 rounded-lg shadow-lg rotate-3"><Zap className="text-white fill-white" size={24} /></div>
+                                <div className="text-left">
+                                    <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight italic">Verb Upgrader 2.0</h1>
+                                    <p className="text-xs font-bold text-slate-400">強力動詞深度解析版</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-4">
+                                <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200 flex items-center gap-3">
+                                    <div className="text-right">
+                                        <p className="text-[10px] uppercase font-bold text-slate-400">Total Score</p>
+                                        <p className="text-xl font-black text-indigo-600 leading-none">{score}</p>
+                                    </div>
+                                    <Trophy className="text-amber-400" size={24} />
+                                </div>
+                                <div className={`px-4 py-2 rounded-xl shadow-sm border transition-all duration-300 flex items-center gap-3 ${combo > 0 ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white border-slate-200'}`}>
+                                    <div className="text-right">
+                                        <p className={`text-[10px] uppercase font-bold ${combo > 0 ? 'text-orange-100' : 'text-slate-400'}`}>Combo</p>
+                                        <p className="text-xl font-black leading-none">{combo}</p>
+                                    </div>
+                                    <Flame className={combo > 0 ? 'animate-bounce' : 'text-slate-300'} size={24} />
+                                </div>
+                            </div>
+                        </header>
+
+                        {!isFinished ? (
+                            <div className={`bg-white rounded-3xl shadow-2xl overflow-hidden border-2 transition-transform duration-300 ${shake ? 'shake' : ''}`}>
+                                <div className="h-3 bg-slate-100 w-full flex"><div className={`h-full transition-all duration-700 ease-out ${combo > 3 ? 'bg-orange-500' : 'bg-indigo-500'}`} style={{ width: `${progress}%` }}></div></div>
+                                <div className="p-6 md:p-10">
+                                    <div className="flex justify-between items-center mb-8 text-left">
+                                        <div className="flex items-center gap-2 text-indigo-500"><Target size={18} /><span className="text-sm font-black text-slate-400 uppercase tracking-wider">Mission {currentStep + 1} / {questions.length}</span></div>
+                                        <div className={`text-sm font-bold px-3 py-1 rounded-full ${getRank(score).color} bg-slate-50 border border-current`}>{getRank(score).title}</div>
+                                    </div>
+                                    <div className="relative mb-10 group text-left">
+                                        <div className="absolute -inset-1 bg-gradient-to-r from-red-100 to-orange-100 rounded-2xl blur opacity-25"></div>
+                                        <div className="relative p-8 bg-white rounded-2xl border-2 border-dashed border-slate-200">
+                                            <span className="absolute -top-3 left-6 bg-red-500 text-white text-[10px] px-2 py-1 rounded font-black tracking-widest uppercase">中式直譯 (Weak)</span>
+                                            <p className="text-2xl md:text-3xl font-bold text-slate-400 line-through italic decoration-red-400/40 mb-3 leading-tight">"{questions[currentStep].chinglish}"</p>
+                                            <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-lg border border-slate-100 text-left">
+                                                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest bg-white px-2 py-0.5 rounded shadow-sm border border-indigo-50">意指：</span>
+                                                <p className="text-slate-600 font-medium text-sm leading-relaxed">{questions[currentStep].chinese}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-6 text-left">
+                                        <div className="flex items-center gap-2 text-indigo-600"><BookOpen size={20} className="shrink-0" /><p className="font-bold text-lg">{questions[currentStep].hint}</p></div>
+                                        <div className="grid gap-4">
+                                            {questions[currentStep].options.map((option, idx) => (
+                                                <button key={idx} onClick={() => handleAnswer(idx)} disabled={showFeedback} className={`group relative text-left p-5 rounded-2xl border-2 transition-all duration-200 ${showFeedback ? (questions[currentStep].correctIndex.includes(idx) ? 'border-green-500 bg-green-50 scale-[1.02] z-10' : (selectedAnswer === idx ? 'border-red-500 bg-red-50' : 'border-slate-100 opacity-40')) : 'border-slate-200 hover:border-indigo-500 hover:shadow-lg hover:-translate-y-1 bg-white'}`}>
+                                                    <div className="flex items-center justify-between relative z-10">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black ${showFeedback && questions[currentStep].correctIndex.includes(idx) ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-400'}`}>{String.fromCharCode(65 + idx)}</div>
+                                                            <span className={`font-bold text-xl ${showFeedback && questions[currentStep].correctIndex.includes(idx) ? 'text-green-700' : 'text-slate-700'}`}>{option.text}</span>
+                                                        </div>
+                                                        {showFeedback && questions[currentStep].correctIndex.includes(idx) && <CheckCircle2 className="text-green-500" size={28} />}
+                                                        {showFeedback && selectedAnswer === idx && !questions[currentStep].correctIndex.includes(idx) && <XCircle className="text-red-500" size={28} />}
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {showFeedback && (
+                                        <div className="mt-8 animate-in fade-in zoom-in duration-300 text-left space-y-4">
+                                            <div className={`p-6 rounded-2xl border-2 ${questions[currentStep].correctIndex.includes(selectedAnswer) ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                                                <div className="flex items-start gap-3">
+                                                    <MessageCircle className={questions[currentStep].correctIndex.includes(selectedAnswer) ? 'text-green-600' : 'text-red-600'} />
+                                                    <p className="font-medium text-slate-700">{questions[currentStep].options[selectedAnswer]?.explanation}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="p-6 bg-slate-900 rounded-2xl shadow-xl text-white text-left">
+                                                <div className="flex items-center gap-2 text-indigo-400 font-black text-sm uppercase mb-4 tracking-widest">
+                                                    <Star size={18} className="fill-indigo-400" /> 正確解答與深度分析
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <p className="text-xs text-slate-500 uppercase font-bold mb-1">道地英文句子 (Natural Sentence)</p>
+                                                        <p className="text-xl font-black text-indigo-300 italic tracking-wide">"{feedbackData.sentence}"</p>
+                                                        <p className="text-xs text-slate-400 mt-2 font-medium">翻譯：{feedbackData.chinese}</p>
+                                                    </div>
+                                                    <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <Info size={16} className="text-amber-400" />
+                                                            <p className="text-sm font-bold text-amber-400">專家解析 (Analysis)</p>
+                                                        </div>
+                                                        <p className="text-sm text-slate-300 leading-relaxed font-medium">
+                                                            {feedbackData.analysis}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-end mt-6">
+                                                    <button onClick={nextQuestion} className="flex items-center justify-center gap-2 px-8 py-3 rounded-xl font-black transition-all shadow-lg active:scale-95 text-white uppercase tracking-wider text-sm bg-indigo-600 hover:bg-indigo-700">
+                                                        {currentStep < questions.length - 1 ? '下一題' : '查看結果'}<ChevronRight size={20} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 text-center border-4 border-indigo-100">
+                                <div className="relative inline-block mb-8"><div className="w-32 h-32 bg-amber-100 rounded-3xl flex items-center justify-center mx-auto rotate-12"><Trophy size={64} className="text-amber-500" /></div></div>
+                                <h2 className="text-4xl font-black text-slate-800 mb-2 text-center">訓練完成</h2>
+                                <p className="text-slate-400 font-bold tracking-widest uppercase text-sm mb-8 text-center">Level Cleared</p>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10 mt-10">
+                                    <div className="bg-slate-50 p-4 rounded-2xl"><p className="text-xs font-bold text-slate-400 uppercase mb-1">Score</p><p className="text-3xl font-black text-indigo-600">{score}</p></div>
+                                    <div className="bg-slate-50 p-4 rounded-2xl"><p className="text-xs font-bold text-slate-400 uppercase mb-1">Max Combo</p><p className="text-3xl font-black text-orange-500">{maxCombo}</p></div>
+                                    <div className="bg-slate-50 p-4 rounded-2xl col-span-2 md:col-span-1"><p className="text-xs font-bold text-slate-400 uppercase mb-1">Rank</p><p className="text-xl font-black text-slate-600">{getRank(score).title.split(' ')[0]}</p></div>
+                                </div>
+                                <button onClick={resetGame} className="group flex items-center justify-center gap-3 w-full md:w-auto mx-auto bg-slate-900 text-white px-10 py-5 rounded-2xl font-black hover:bg-black transition-all shadow-xl hover:-translate-y-1 active:scale-95 uppercase tracking-widest"><RefreshCw size={24} />Try Again</button>
+                            </div>
+                        )}
+                        <footer className="mt-12 text-center text-slate-400 font-bold text-xs tracking-widest uppercase opacity-50">Powered by VerbUpgrader Engine v2.0</footer>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
